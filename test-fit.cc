@@ -46,13 +46,26 @@ void writeCurve(const ClosedCurve &curve, std::string filename, size_t resolutio
   f << '1' << std::endl;
 }
 
+void writePoints(const std::vector<PointSet> &points, std::string filename) {
+  std::ofstream f(filename);
+  f.exceptions(std::ios::failbit | std::ios::badbit);
+  size_t count = 0;
+  for (const auto &ps : points)
+    for (size_t i = 0; i < ps.size(); i += 3) {
+      f << "v " << ps[i] << ' ' << ps[i+1] << ' ' << ps[i+2] << std::endl;
+      ++count;
+    }
+  for (size_t i = 1; i <= count; ++i)
+    f << "p " << i << std::endl;
+}
+
 int main(int argc, char **argv) {
   if (argc < 2 || argc > 3) {
     std::cerr << "Usage: " << argv[0] << " <model.params> [# of segments]" << std::endl;
     return 1;
   }
 
-  size_t n_segments = 5;
+  size_t n_segments = 8;
   if (argc == 3)
     n_segments = std::atoi(argv[2]);
 
@@ -60,6 +73,7 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < 3; ++i) {
     const auto &points = params[i];
     auto curve = closedCurveFit(points, {0, 9}, 3, n_segments);
-    writeCurve(curve, std::string("/tmp/") + std::to_string(i) + ".obj", 100);
+    writeCurve(curve, std::string("/tmp/curve-") + std::to_string(i) + ".obj", 100);
   }
+  writePoints(params, "/tmp/points.obj");
 }
