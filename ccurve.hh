@@ -3,8 +3,8 @@
 #include <array>
 #include <vector>
 
-// `knots` has n + 1 values, when there are n (different) control points;
-// `cpts` has (3*)n values, it does not include the repeated first control point at the end.
+// `knots` has n + 1 values
+// `cpts` has (3*)n values - it does not include the repeated first control point at the end
 struct ClosedCurve {
   size_t degree;
   std::vector<double> knots;
