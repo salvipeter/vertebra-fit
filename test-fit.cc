@@ -47,15 +47,19 @@ void writeCurve(const ClosedCurve &curve, std::string filename, size_t resolutio
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <model.params>" << std::endl;
+  if (argc < 2 || argc > 3) {
+    std::cerr << "Usage: " << argv[0] << " <model.params> [# of segments]" << std::endl;
     return 1;
   }
+
+  size_t n_segments = 5;
+  if (argc == 3)
+    n_segments = std::atoi(argv[2]);
 
   auto params = readParams(argv[1]);
   for (size_t i = 0; i < 3; ++i) {
     const auto &points = params[i];
-    auto curve = closedCurveFit(points, {0, 1});
+    auto curve = closedCurveFit(points, {0, 9}, 3, n_segments);
     writeCurve(curve, std::string("/tmp/") + std::to_string(i) + ".obj", 100);
   }
 }
