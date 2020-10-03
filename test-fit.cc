@@ -71,15 +71,22 @@ void writePoints(const std::vector<PointSet> &points, std::string filename) {
     f << "p " << i << std::endl;
 }
 
-void writeSurface(const std::vector<ClosedCurve> &curves, std::string filename, size_t resolution) {
+// Assumes that `curves` has 3 curves parameterized in [0,1]
+// Generates a surface with a quadratic curve going through points with the same parameters
+void writeSurface(const std::vector<ClosedCurve> &curves, std::string filename,
+                  size_t resolution, size_t depth) {
   std::ofstream f(filename);
   f.exceptions(std::ios::failbit | std::ios::badbit);
-  for (const auto &curve : curves) {
-    double range = curve.knots.back() - curve.knots.front();
-    for (size_t i = 0; i < resolution; ++i) {
-      double u = (double)i / resolution; // does not reach 1
-      u = curve.knots.front() + range * u;
-      auto p = curve.eval(u);
+  for (size_t i = 0; i < resolution; ++i) {
+    double u = (double)i / resolution; // does not reach 1
+    auto p0 = curves[0].eval(u), p1 = curves[1].eval(u), p2 = curves[2].eval(u);
+    for (size_t k = 0; k < 3; ++k)
+      p1[k] = (4 * p1[k] - p0[k] - p2[k]) / 2;
+    for (size_t j = 0; j < depth; ++j) {
+      double v = (double)j / (depth - 1);
+      std::array<double, 3> p;
+      for (size_t k = 0; k < 3; ++k)
+        p[k] = (1 - v) * (1 - v) * p0[k] + 2 * (1 - v) * v * p1[k] + v * v * p2[k];
       f << "v " << p[0] << ' ' << p[1] << ' ' << p[2] << std::endl;
     }
   }
@@ -87,23 +94,23 @@ void writeSurface(const std::vector<ClosedCurve> &curves, std::string filename, 
   // Top
   f << "f";
   for (size_t i = 1; i <= resolution; ++i)
-    f << ' ' << i;
+    f << ' ' << (i - 1) * depth + 1;
   f << ' ' << 1 << std::endl;
 
   // Bottom
   f << "f";
-  for (size_t i = resolution * (curves.size() - 1) + 1; i <= resolution * curves.size(); ++i)
-    f << ' ' << i;
-  f << ' ' << resolution * (curves.size() - 1) + 1 << std::endl;
+  for (size_t i = 1; i <= resolution; ++i)
+    f << ' ' << (i - 1) * depth + depth;
+  f << ' ' << depth << std::endl;
 
   // Side
-  for (size_t level = 1; level < curves.size(); ++level)
-    for (size_t i = 1; i <= resolution; ++i) {
+  for (size_t i = 1; i <= resolution; ++i)
+    for (size_t level = 1; level < depth; ++level) {
       size_t ip = (i % resolution) + 1;
-      size_t j = (level - 1) * resolution + i;
-      size_t jp = (level - 1) * resolution + ip;
-      size_t k = level * resolution + i;
-      size_t kp = level * resolution + ip;
+      size_t j = (i - 1) * depth + level;
+      size_t jp = (ip - 1) * depth + level;
+      size_t k = (i - 1) * depth + level + 1;
+      size_t kp = (ip - 1) * depth + level + 1;
       f << "f " << j << ' ' << jp << ' ' << kp << ' ' << k << std::endl;
     }
 }
@@ -129,5 +136,5 @@ int main(int argc, char **argv) {
     writeCurve(curve, std::string("/tmp/curve-") + std::to_string(i) + ".obj", 100);
   }
 
-  writeSurface(curves, "/tmp/surface.obj", 100);
+  writeSurface(curves, "/tmp/surface.obj", 100, 20);
 }
