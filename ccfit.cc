@@ -22,10 +22,12 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
   u.push_back(0);
   double total = 0;
   for (size_t i = 1; i < m; ++i) {
-    u.push_back(std::sqrt((b.row(i) - b.row(i-1)).norm()));
+    u.push_back(std::sqrt((b.row(i) - b.row(i - 1)).norm()));
     total += u.back();
   }
-  for (size_t i = 1; i < m - 1; ++i)
+  u.push_back(std::sqrt((b.row(0) - b.row(m - 1)).norm()));
+  total += u.back();
+  for (size_t i = 1; i < m; ++i)
     u[i] = u[i-1] + u[i] / total;
   u.back() = 1;
 
@@ -38,6 +40,8 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
     result.knots.push_back(knot);
   }
   result.knots.push_back(1);
+
+  u.pop_back();
 
   MatrixXd A = MatrixXd::Zero(m, n_cp);
   for (size_t i = 0; i < m; ++i) {
