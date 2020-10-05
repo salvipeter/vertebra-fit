@@ -13,7 +13,6 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
   size_t m = points.size() / 3;
   assert(n_cp <= m);
   Map<const Matrix<double,Dynamic,3,RowMajor>> data(&points[0], m, 3);
-  MatrixXd b = data;
 
   ClosedCurve result;
   result.degree = degree;
@@ -22,10 +21,10 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
   u.push_back(0);
   double total = 0;
   for (size_t i = 1; i < m; ++i) {
-    u.push_back(std::sqrt((b.row(i) - b.row(i - 1)).norm()));
+    u.push_back(std::sqrt((data.row(i) - data.row(i - 1)).norm()));
     total += u.back();
   }
-  u.push_back(std::sqrt((b.row(0) - b.row(m - 1)).norm()));
+  u.push_back(std::sqrt((data.row(0) - data.row(m - 1)).norm()));
   total += u.back();
   for (size_t i = 1; i < m; ++i)
     u[i] = u[i-1] + u[i] / total;
@@ -33,10 +32,10 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
 
   result.knots.push_back(0);
   for (size_t i = 1; i < n_cp; ++i) {
-    double d = (double)m / n_cp; // >= 1
-    size_t j = d * i;            // >= 1
+    double d = (double)m / n_cp;
+    size_t j = d * i;
     double alpha = d * i - j;
-    double knot = (1 - alpha) * u[j-1] + alpha * u[j];
+    double knot = (1 - alpha) * u[j] + alpha * u[j+1];
     result.knots.push_back(knot);
   }
   result.knots.push_back(1);
@@ -53,6 +52,7 @@ ClosedCurve closedCurveFit(const std::vector<double> &points,
       else
         A(i, (s - degree + j) % n_cp) = coeff[j];
   }
+  MatrixXd b = data;
 
   double large_number = 1000;
   for (size_t i : important_indices) {
